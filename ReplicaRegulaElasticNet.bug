@@ -1,0 +1,66 @@
+/*
+MODEL
+Binary regression
+Replications
+All variables
+ELASTIC NET
+*/
+ 
+
+model{
+
+### TRAINING
+	for(i in 1:N){
+		Y[i] ~ dbern(P[i])
+		logit(P[i]) <- Alpha + Gamma*Z[i] + Beta%*%W[i,] 
+
+		for(k in 1:K){
+			for(j in 1:J){
+				X[i,k,j] ~ dnorm( W[i,k] , deltaX[k] ) 
+			}
+			W[i,k] ~ dnorm( muW[k], tauW[k] )
+		}
+	}	
+
+### TESTING
+	for(i in 1:N.new){
+		Y.new[i] ~ dbern(P.new[i])
+		logit(P.new[i]) <- Alpha + Gamma*Z.new[i] + Beta%*%W.new[i,] 
+
+		for(k in 1:K){
+			for(j in 1:J){
+				X.new[i,k,j] ~ dnorm( W.new[i,k] , deltaX[k] ) 
+			}
+			W.new[i,k] ~ dnorm( muW[k], tauW[k] )
+		}
+	}	
+
+### PRIOR
+	Alpha ~ dnorm(0,0.01)
+	Gamma ~ dnorm(0,0.01)
+
+	for (k in 1:K){
+
+		Beta[k] ~ dnorm(0,invsig2.Bk)
+
+		deltaX[k] ~ dgamma(0.01, 0.01)
+
+		muW[k] ~ dnorm(0, 1)
+		tauW[k] ~ dgamma(1,1)
+
+	}
+
+		invsig2.Bk <- pow(sig2.Bk,-1)
+		sig2.Bk <- sigma2*pow((invtau2.Bk+lambda2),-1)
+		invtau2.Bk <- pow(tau2.Bk,-1)
+		tau2.Bk ~ dexp(lambda1square/2)
+
+	sigma2 <- 1
+	invsigma2 <- 1
+	lambda1square ~ dgamma(1,1)
+	lambda2 ~ dgamma(1,1)
+	lambda1 <- pow(lambda1square,0.5)	
+
+
+}
+
